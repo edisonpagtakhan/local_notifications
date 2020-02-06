@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 void main() => runApp(MyApp());
 
@@ -44,17 +45,46 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  FlutterLocalNotificationsPlugin _localNotifPlugin;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _initialize();
+  }
+
+  void _initialize() {
+    _localNotifPlugin = FlutterLocalNotificationsPlugin();
+
+    var androidSettings = AndroidInitializationSettings("ic_launcher");
+    var iosSettings = IOSInitializationSettings();
+    var settings = InitializationSettings(androidSettings, iosSettings);
+
+    _localNotifPlugin.initialize(
+      settings,
+      onSelectNotification: _onSelectNotification,
+    );
+  }
+
+  Future<dynamic> _onSelectNotification(String payload) {
+    return Navigator.push(context, MaterialPageRoute(
+      builder: (context) => MyHomePage()
+    ));
+  }
+
+  void _generateNotif() async {
+    var androidSpecific = AndroidNotificationDetails(
+      "1",
+      "Sample",
+      "Test Channel",
+      importance: Importance.High,
+      priority: Priority.High
+    );
+
+    var iosSpecific = IOSNotificationDetails();
+    var platformSpecific = NotificationDetails(androidSpecific, iosSpecific);
+
+    await _localNotifPlugin.show(10, "Test PN", "Test Body", platformSpecific);
   }
 
   @override
@@ -91,21 +121,15 @@ class _MyHomePageState extends State<MyHomePage> {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
+            RaisedButton(
+              onPressed: _generateNotif,
+              child: Text(
+                "Push button to generate notification"
+              ),
+            )
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
